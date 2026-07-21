@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: webpilot-postgres
+    restart: always
+
+    environment:
+      POSTGRES_DB: webpilot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: webpilot-redis
+    restart: always
+
+    ports:
+      - "6382:6379"
+
+    volumes:
+      - redis-data:/data
+
+  backend:
+    image: webpilot-backend:latest
+    container_name: webpilot-backend
+
+    depends_on:
+      - postgres
+      - redis
+
+    ports:
+      - "8084:8084"
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/webpilot
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+
+      SPRING_PROFILES_ACTIVE: docker
+
+  frontend:
+    image: webpilot-frontend:latest
+    container_name: webpilot-frontend
+
+    depends_on:
+      - backend
+
+    ports:
+      - "5176:80"
+
+volumes:
+  postgres-data:
+  redis-data:
